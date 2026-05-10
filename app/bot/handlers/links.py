@@ -584,6 +584,7 @@ async def export_callback(
     )
     service = ExportService(session)
 
+    chat_id = callback.from_user.id
     if callback_data.file_format == "message":
         title = await _scope_title(session, db_user.id, scope, data)
         body = await service.export_message(
@@ -593,12 +594,12 @@ async def export_callback(
             empty_text=text(data, "export.message_empty"),
             truncated_template=text(data, "export.message_truncated", remaining="{remaining}"),
         )
-        if callback.message is not None:
-            await callback.message.answer(
-                body,
-                parse_mode="HTML",
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
-            )
+        await callback.bot.send_message(
+            chat_id=chat_id,
+            text=body,
+            parse_mode="HTML",
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+        )
         await callback.answer()
         return
 
@@ -609,11 +610,11 @@ async def export_callback(
     else:
         payload = await service.export_json(db_user.id, scope)
         filename = f"linkdooni-export-{suffix}.json"
-    if callback.message is not None:
-        await callback.message.answer_document(
-            BufferedInputFile(payload, filename=filename),
-            caption=text(data, "export.ready"),
-        )
+    await callback.bot.send_document(
+        chat_id=chat_id,
+        document=BufferedInputFile(payload, filename=filename),
+        caption=text(data, "export.ready"),
+    )
     await callback.answer()
 
 
