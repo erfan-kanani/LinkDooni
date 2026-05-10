@@ -66,14 +66,12 @@ async def set_commands(bot: Bot, catalog: MessageCatalog) -> None:
         ("search", "commands.search"),
         ("favorites", "commands.favorites"),
         ("export", "commands.export"),
-        ("settings", "commands.settings"),
     ]
-    for language in catalog.languages:
-        commands = [
-            BotCommand(command=command, description=catalog.t(language, key))
-            for command, key in command_keys
-        ]
-        await bot.set_my_commands(commands, language_code=language)
+    commands = [
+        BotCommand(command=command, description=catalog.t(catalog.default_language, key))
+        for command, key in command_keys
+    ]
+    await bot.set_my_commands(commands)
 
 
 def main() -> None:

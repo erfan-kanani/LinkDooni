@@ -32,10 +32,6 @@ class EditLinkCallback(CallbackData, prefix="e"):
     field: str
 
 
-class LanguageCallback(CallbackData, prefix="lang"):
-    code: str
-
-
 class ExportScopeCallback(CallbackData, prefix="exs"):
     mode: str
     category_id: int = 0
