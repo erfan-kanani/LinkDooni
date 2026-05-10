@@ -1,0 +1,248 @@
+en:
+  app_name: "LinkDooni"
+  commands:
+    start: "Start"
+    help: "Help"
+    categories: "Categories"
+    add: "Add link"
+    search: "Search"
+    favorites: "Favorites"
+    export: "Export"
+    settings: "Settings"
+  welcome: |
+    Welcome to LinkDooni, {first_name}.
+
+    Send me one or more website links and I will help you save, categorize, search, and export them.
+  help: |
+    LinkDooni keeps your business links organized inside Telegram.
+
+    Send a URL directly to save it.
+    Use /categories to browse and manage categories.
+    Use /search to find links by title, URL, category, tag, or note.
+    Use /favorites to view pinned links.
+    Use /export to download your data.
+  menu:
+    categories: "Categories"
+    add: "Add"
+    search: "Search"
+    favorites: "Favorites"
+    export: "Export"
+    settings: "Settings"
+    back: "Back"
+    cancel: "Cancel"
+  categories:
+    title: "Your categories"
+    empty: "No categories yet. Create your first category."
+    browse_hint: "Tap a category name to browse links in Telegram's inline results panel."
+    create: "New category"
+    create_now: "Create new category"
+    create_prompt: "Send the category name. You can include an emoji, for example: 📌 Clients"
+    created: "Category created: {name}"
+    renamed: "Category renamed to: {name}"
+    deleted: "Category deleted."
+    delete_confirm: "Delete category “{name}”? Links in it will stay saved without a category."
+    rename: "Rename"
+    rename_prompt: "Send the new category name."
+    delete: "Delete"
+    list: "List links"
+    manage: "Manage"
+    uncategorized: "No category"
+  links:
+    add_prompt: "Send one or more URLs."
+    choose_category: "Choose a category for {count} link(s)."
+    create_category_prompt: "Send a name for the new category. I will save the pending link(s) there."
+    saved: "Saved {count} link(s)."
+    duplicate: "Already saved: {url}"
+    duplicate_summary: "{count} duplicate link(s) were skipped."
+    invalid_url: "This URL is not safe or valid: {url}"
+    metadata_failed: "I saved the link, but could not fetch its preview."
+    empty_category: "No links in this category yet."
+    card: |
+      <b>{title}</b>
+      {url}
+
+      {description}
+    open: "Open"
+    edit: "Edit"
+    move: "Move"
+    delete: "Delete"
+    refresh: "Refresh preview"
+    favorite: "Favorite"
+    unfavorite: "Unfavorite"
+    delete_confirm: "Delete “{title}”?"
+    deleted: "Link deleted."
+    moved: "Link moved."
+    refreshed: "Preview refreshed."
+    favorite_updated: "Favorite status updated."
+    category_cards_intro: "Use the category button to browse links in the inline results panel."
+    view_category: "View category"
+    add_another: "Add another"
+    edit_menu: "What do you want to edit?"
+    edit_title: "Title"
+    edit_url: "URL"
+    edit_description: "Description"
+    edit_category: "Category"
+    edit_tags: "Tags"
+    edit_note: "Note"
+    edit_prompt: "Send the new value for {field}."
+    edit_saved: "Link updated."
+    tags_hint: "Send tags separated by commas."
+  search:
+    prompt: "Send a search query."
+    inline_prompt: "Tap below to browse results in Telegram's inline panel."
+    open_inline: "Browse results"
+    empty: "No matching links found."
+    results: "Search results for “{query}”"
+  inline:
+    empty_title: "No links found"
+    empty_description: "Try another search or add a new link."
+    all_links: "All links"
+    category_links: "Category: {name}"
+    favorite_links: "Favorites"
+  export:
+    choose_format: "Choose export format."
+    json: "JSON"
+    csv: "CSV"
+    disabled: "Import/export is currently disabled."
+    ready: "Your export is ready."
+  import:
+    command: "Import"
+    prompt: "Send a LinkDooni JSON export to import."
+    done: "Imported {created} link(s). Skipped {skipped} duplicate or invalid item(s)."
+  settings:
+    title: "Settings"
+    language: "Language"
+    language_updated: "Language updated."
+  validation:
+    unsupported_scheme: "Only http and https links are supported."
+    private_host: "Local, private, and internal hosts are blocked."
+    too_large: "The response is too large."
+    timeout: "The website did not respond in time."
+    generic: "Something went wrong. Please try again."
+  confirmations:
+    yes_delete: "Yes, delete"
+    no_keep: "No, keep"
+
+fa:
+  app_name: "لینک‌دونی"
+  commands:
+    start: "شروع"
+    help: "راهنما"
+    categories: "دسته‌بندی‌ها"
+    add: "افزودن لینک"
+    search: "جستجو"
+    favorites: "علاقه‌مندی‌ها"
+    export: "خروجی"
+    settings: "تنظیمات"
+  welcome: |
+    {first_name} عزیز، به لینک‌دونی خوش آمدی.
+
+    لینک‌های سایت‌ها را برایم بفرست تا ذخیره، دسته‌بندی، جستجو و خروجی گرفتن از آن‌ها را داخل تلگرام انجام بدهی.
+  help: |
+    لینک‌دونی برای مرتب کردن لینک‌های کاری داخل تلگرام ساخته شده است.
+
+    برای ذخیره، لینک را مستقیم بفرست.
+    با /categories دسته‌بندی‌ها را مدیریت کن.
+    با /search بر اساس عنوان، آدرس، دسته، برچسب یا یادداشت جستجو کن.
+    با /favorites لینک‌های پین‌شده را ببین.
+    با /export از داده‌ها خروجی بگیر.
+  menu:
+    categories: "دسته‌بندی‌ها"
+    add: "افزودن"
+    search: "جستجو"
+    favorites: "علاقه‌مندی‌ها"
+    export: "خروجی"
+    settings: "تنظیمات"
+    back: "بازگشت"
+    cancel: "لغو"
+  categories:
+    title: "دسته‌بندی‌های شما"
+    empty: "هنوز دسته‌بندی نداری. اولین دسته را بساز."
+    browse_hint: "روی نام دسته بزن تا لینک‌ها در پنل نتایج تلگرام نمایش داده شوند."
+    create: "دسته جدید"
+    create_now: "دسته جدید"
+    create_prompt: "نام دسته‌بندی را بفرست. می‌توانی ایموجی هم بگذاری، مثلا: 📌 مشتری‌ها"
+    created: "دسته‌بندی ساخته شد: {name}"
+    renamed: "نام دسته‌بندی تغییر کرد به: {name}"
+    deleted: "دسته‌بندی حذف شد."
+    delete_confirm: "دسته‌بندی «{name}» حذف شود؟ لینک‌های داخل آن بدون دسته‌بندی باقی می‌مانند."
+    rename: "تغییر نام"
+    rename_prompt: "نام جدید دسته‌بندی را بفرست."
+    delete: "حذف"
+    list: "نمایش لینک‌ها"
+    manage: "مدیریت"
+    uncategorized: "بدون دسته"
+  links:
+    add_prompt: "یک یا چند لینک بفرست."
+    choose_category: "برای {count} لینک یک دسته‌بندی انتخاب کن."
+    create_category_prompt: "نام دسته جدید را بفرست. لینک‌های در انتظار را همان‌جا ذخیره می‌کنم."
+    saved: "{count} لینک ذخیره شد."
+    duplicate: "قبلا ذخیره شده: {url}"
+    duplicate_summary: "{count} لینک تکراری ذخیره نشد."
+    invalid_url: "این لینک معتبر یا امن نیست: {url}"
+    metadata_failed: "لینک ذخیره شد، اما پیش‌نمایش آن دریافت نشد."
+    empty_category: "در این دسته هنوز لینکی نیست."
+    card: |
+      <b>{title}</b>
+      {url}
+
+      {description}
+    open: "باز کردن"
+    edit: "ویرایش"
+    move: "انتقال"
+    delete: "حذف"
+    refresh: "به‌روزرسانی پیش‌نمایش"
+    favorite: "علاقه‌مندی"
+    unfavorite: "حذف از علاقه‌مندی"
+    delete_confirm: "لینک «{title}» حذف شود؟"
+    deleted: "لینک حذف شد."
+    moved: "لینک منتقل شد."
+    refreshed: "پیش‌نمایش به‌روز شد."
+    favorite_updated: "وضعیت علاقه‌مندی به‌روز شد."
+    category_cards_intro: "برای دیدن لینک‌ها، از دکمه دسته استفاده کن تا پنل نتایج تلگرام باز شود."
+    view_category: "نمایش دسته"
+    add_another: "افزودن لینک دیگر"
+    edit_menu: "کدام بخش را ویرایش می‌کنی؟"
+    edit_title: "عنوان"
+    edit_url: "آدرس"
+    edit_description: "توضیح"
+    edit_category: "دسته‌بندی"
+    edit_tags: "برچسب‌ها"
+    edit_note: "یادداشت"
+    edit_prompt: "مقدار جدید برای {field} را بفرست."
+    tags_hint: "برچسب‌ها را با ویرگول جدا کن."
+  search:
+    prompt: "عبارت جستجو را بفرست."
+    inline_prompt: "برای دیدن نتایج در پنل تلگرام، دکمه زیر را بزن."
+    open_inline: "نمایش نتایج"
+    empty: "لینکی پیدا نشد."
+    results: "نتایج جستجو برای «{query}»"
+  inline:
+    empty_title: "لینکی پیدا نشد"
+    empty_description: "عبارت دیگری جستجو کن یا لینک جدید اضافه کن."
+    all_links: "همه لینک‌ها"
+    category_links: "دسته: {name}"
+    favorite_links: "علاقه‌مندی‌ها"
+  export:
+    choose_format: "فرمت خروجی را انتخاب کن."
+    json: "JSON"
+    csv: "CSV"
+    disabled: "فعلا خروجی گرفتن و وارد کردن داده غیرفعال است."
+    ready: "خروجی آماده است."
+  import:
+    command: "وارد کردن"
+    prompt: "فایل یا متن JSON خروجی لینک‌دونی را بفرست."
+    done: "{created} لینک وارد شد. {skipped} مورد تکراری یا نامعتبر رد شد."
+  settings:
+    title: "تنظیمات"
+    language: "زبان"
+    language_updated: "زبان به‌روز شد."
+  validation:
+    unsupported_scheme: "فقط لینک‌های http و https پشتیبانی می‌شوند."
+    private_host: "آدرس‌های محلی، خصوصی و داخلی مسدود هستند."
+    too_large: "حجم پاسخ سایت بیش از حد مجاز است."
+    timeout: "سایت در زمان مناسب پاسخ نداد."
+    generic: "مشکلی پیش آمد. دوباره تلاش کن."
+  confirmations:
+    yes_delete: "بله، حذف کن"
+    no_keep: "نه، نگه دار"

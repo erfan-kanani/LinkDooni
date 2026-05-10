@@ -1,0 +1,1 @@
+"""LinkDooni application package."""
