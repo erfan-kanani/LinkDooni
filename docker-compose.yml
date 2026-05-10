@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: linkdooni
       POSTGRES_PASSWORD: linkdooni
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - linkdooni-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +15,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
+
+  bot:
+    build: .
+    container_name: linkdooni-bot
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://linkdooni:linkdooni@db:5432/linkdooni
+      LINKDOONI_AUTO_CREATE_DB: "false"
+    restart: unless-stopped
 
 volumes:
   linkdooni-postgres-data:
