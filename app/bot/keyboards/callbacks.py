@@ -36,5 +36,12 @@ class LanguageCallback(CallbackData, prefix="lang"):
     code: str
 
 
+class ExportScopeCallback(CallbackData, prefix="exs"):
+    mode: str
+    category_id: int = 0
+
+
 class ExportCallback(CallbackData, prefix="ex"):
     file_format: str
+    mode: str = "all"
+    category_id: int = 0

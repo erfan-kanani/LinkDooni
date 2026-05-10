@@ -1,7 +1,8 @@
 import csv
 import io
 import json
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,18 +10,27 @@ from app.db.models import Link
 from app.db.repositories.categories import CategoryRepository
 from app.db.repositories.links import LinkRepository
 
+ExportMode = Literal["all", "favorites", "category", "uncategorized"]
+EXPORT_LIMIT = 100_000
+
+
+@dataclass(frozen=True, slots=True)
+class ExportScope:
+    mode: ExportMode = "all"
+    category_id: int | None = None
+
 
 class ExportService:
     def __init__(self, session: AsyncSession) -> None:
         self.categories = CategoryRepository(session)
         self.links = LinkRepository(session)
 
-    async def export_json(self, user_id: int) -> bytes:
-        payload = await self._payload(user_id)
+    async def export_json(self, user_id: int, scope: ExportScope) -> bytes:
+        payload = await self._payload(user_id, scope)
         return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
 
-    async def export_csv(self, user_id: int) -> bytes:
-        links = await self.links.list_for_user(user_id)
+    async def export_csv(self, user_id: int, scope: ExportScope) -> bytes:
+        links = await self._fetch_links(user_id, scope)
         buffer = io.StringIO()
         writer = csv.DictWriter(
             buffer,
@@ -41,11 +51,25 @@ class ExportService:
             writer.writerow(self._link_csv(link))
         return buffer.getvalue().encode("utf-8-sig")
 
-    async def _payload(self, user_id: int) -> dict[str, Any]:
+    async def _fetch_links(self, user_id: int, scope: ExportScope) -> list[Link]:
+        if scope.mode == "favorites":
+            return await self.links.list_favorites(user_id, limit=EXPORT_LIMIT, offset=0)
+        if scope.mode == "category":
+            return await self.links.list_by_category(
+                user_id, scope.category_id, limit=EXPORT_LIMIT, offset=0
+            )
+        if scope.mode == "uncategorized":
+            return await self.links.list_by_category(
+                user_id, None, limit=EXPORT_LIMIT, offset=0
+            )
+        return await self.links.list_for_user(user_id, limit=EXPORT_LIMIT, offset=0)
+
+    async def _payload(self, user_id: int, scope: ExportScope) -> dict[str, Any]:
         categories = await self.categories.list_for_user(user_id)
-        links = await self.links.list_for_user(user_id)
+        links = await self._fetch_links(user_id, scope)
         return {
             "version": 1,
+            "scope": {"mode": scope.mode, "category_id": scope.category_id},
             "categories": [
                 {
                     "name": category.name,

@@ -67,7 +67,6 @@ async def set_commands(bot: Bot, catalog: MessageCatalog) -> None:
         ("favorites", "commands.favorites"),
         ("export", "commands.export"),
         ("settings", "commands.settings"),
-        ("import", "import.command"),
     ]
     for language in catalog.languages:
         commands = [

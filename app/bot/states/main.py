@@ -11,4 +11,3 @@ class LinkStates(StatesGroup):
     waiting_save_category_name = State()
     waiting_search = State()
     waiting_edit_value = State()
-    waiting_import = State()

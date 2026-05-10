@@ -8,6 +8,7 @@ from app.bot.keyboards.callbacks import (
     ConfirmCallback,
     EditLinkCallback,
     ExportCallback,
+    ExportScopeCallback,
     LanguageCallback,
     LinkCallback,
     MenuCallback,
@@ -272,17 +273,66 @@ def links_list_keyboard(
     return builder.as_markup()
 
 
-def export_keyboard(catalog: MessageCatalog, language: str) -> InlineKeyboardMarkup:
+def export_scope_keyboard(
+    categories: Iterable[Category],
+    catalog: MessageCatalog,
+    language: str,
+) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "export.scope_all"),
+            callback_data=ExportScopeCallback(mode="all").pack(),
+        )
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "export.scope_favorites"),
+            callback_data=ExportScopeCallback(mode="favorites").pack(),
+        )
+    )
+    for category in categories:
+        builder.row(
+            InlineKeyboardButton(
+                text=catalog.t(language, "export.scope_category", name=_category_label(category)),
+                callback_data=ExportScopeCallback(mode="category", category_id=category.id).pack(),
+            )
+        )
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "export.scope_uncategorized"),
+            callback_data=ExportScopeCallback(mode="uncategorized").pack(),
+        )
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "menu.cancel"),
+            callback_data=MenuCallback(action="home").pack(),
+        )
+    )
+    return builder.as_markup()
+
+
+def export_format_keyboard(
+    catalog: MessageCatalog,
+    language: str,
+    *,
+    mode: str,
+    category_id: int = 0,
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(
         text=catalog.t(language, "export.json"),
-        callback_data=ExportCallback(file_format="json"),
+        callback_data=ExportCallback(file_format="json", mode=mode, category_id=category_id),
     )
     builder.button(
         text=catalog.t(language, "export.csv"),
-        callback_data=ExportCallback(file_format="csv"),
+        callback_data=ExportCallback(file_format="csv", mode=mode, category_id=category_id),
     )
-    builder.button(text=catalog.t(language, "menu.back"), callback_data=MenuCallback(action="home"))
+    builder.button(
+        text=catalog.t(language, "menu.back"),
+        callback_data=MenuCallback(action="export"),
+    )
     builder.adjust(2, 1)
     return builder.as_markup()
 

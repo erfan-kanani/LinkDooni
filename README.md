@@ -1,19 +1,19 @@
 # LinkDooni
 
-LinkDooni is an async Python Telegram bot for Iranian users and small work teams who organize business links inside Telegram. Users can save links, categorize them, fetch previews, search, edit, delete, favorite, import, and export their data without leaving a chat.
+LinkDooni is an async Python Telegram bot for Iranian users and small work teams who organize business links inside Telegram. Users can save links, categorize them, fetch previews, search, edit, delete, favorite, and export their data without leaving a chat.
 
 Storage is PostgreSQL, run locally via Docker. The repository layer is async SQLAlchemy.
 
 ## Features
 
 - Persian and English messages from YAML configuration
-- `/start`, `/help`, `/categories`, `/add`, `/search`, `/favorites`, `/export`, `/settings`, and `/import`
+- `/start`, `/help`, `/categories`, `/add`, `/search`, `/favorites`, `/export`, `/settings`
 - Category create, rename, delete with confirmation, and link browsing
 - Direct and forwarded URL messages, including multiple URLs in one message
 - Metadata fetching for title, description, canonical URL, Open Graph image, and favicon
 - Safe URL fetching with timeouts, response-size limits, safe redirects, and private/internal IP blocking
 - Link edit, move, delete, refresh preview, tags, notes, favorites, and duplicate detection
-- JSON/CSV export and JSON import
+- JSON/CSV export, scoped to all links, favorites, or a single category
 - Async SQLAlchemy repositories, Alembic migrations, Ruff, pre-commit, and tests
 
 ## Create a Telegram Bot
@@ -122,7 +122,7 @@ Feature flags and language defaults live in `app/config/features.yaml`:
 enable_ai_summary: false
 enable_team_workspaces: false
 enable_link_health_check: false
-enable_import_export: true
+enable_export: true
 default_language: fa
 ```
 

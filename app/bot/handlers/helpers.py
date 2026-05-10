@@ -1,3 +1,4 @@
+from contextlib import suppress
 from html import escape
 from typing import Any
 
@@ -35,7 +36,7 @@ async def edit_or_answer(
     link_preview_options: LinkPreviewOptions | None = None,
 ) -> None:
     if callback.inline_message_id is not None:
-        try:
+        with suppress(TelegramBadRequest):
             await callback.bot.edit_message_text(
                 text=body,
                 inline_message_id=callback.inline_message_id,
@@ -43,8 +44,6 @@ async def edit_or_answer(
                 parse_mode=parse_mode,
                 link_preview_options=link_preview_options,
             )
-        except TelegramBadRequest:
-            pass
         await callback.answer()
         return
     if callback.message is None:

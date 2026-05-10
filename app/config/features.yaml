@@ -1,7 +1,7 @@
 enable_ai_summary: false
 enable_team_workspaces: false
 enable_link_health_check: false
-enable_import_export: true
+enable_export: true
 default_language: fa
 supported_languages:
   - fa

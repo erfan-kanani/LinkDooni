@@ -100,15 +100,16 @@ en:
     category_links: "Category: {name}"
     favorite_links: "Favorites"
   export:
+    choose_scope: "What would you like to export?"
     choose_format: "Choose export format."
+    scope_all: "📦 All links"
+    scope_favorites: "⭐ Favorites"
+    scope_category: "📁 {name}"
+    scope_uncategorized: "📁 Without category"
     json: "JSON"
     csv: "CSV"
-    disabled: "Import/export is currently disabled."
+    disabled: "Export is currently disabled."
     ready: "Your export is ready."
-  import:
-    command: "Import"
-    prompt: "Send a LinkDooni JSON export to import."
-    done: "Imported {created} link(s). Skipped {skipped} duplicate or invalid item(s)."
   settings:
     title: "Settings"
     language: "Language"
@@ -224,15 +225,16 @@ fa:
     category_links: "دسته: {name}"
     favorite_links: "علاقه‌مندی‌ها"
   export:
+    choose_scope: "چه چیزی را می‌خواهی خروجی بگیری؟"
     choose_format: "فرمت خروجی را انتخاب کن."
+    scope_all: "📦 همه لینک‌ها"
+    scope_favorites: "⭐ علاقه‌مندی‌ها"
+    scope_category: "📁 {name}"
+    scope_uncategorized: "📁 بدون دسته‌بندی"
     json: "JSON"
     csv: "CSV"
-    disabled: "فعلا خروجی گرفتن و وارد کردن داده غیرفعال است."
+    disabled: "فعلاً خروجی گرفتن غیرفعال است."
     ready: "خروجی آماده است."
-  import:
-    command: "وارد کردن"
-    prompt: "فایل یا متن JSON خروجی لینک‌دونی را بفرست."
-    done: "{created} لینک وارد شد. {skipped} مورد تکراری یا نامعتبر رد شد."
   settings:
     title: "تنظیمات"
     language: "زبان"

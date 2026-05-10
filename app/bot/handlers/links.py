@@ -1,7 +1,6 @@
-from io import BytesIO
 from typing import Any
 
-from aiogram import Bot, F, Router
+from aiogram import F, Router
 from aiogram.filters import Command, CommandObject, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
@@ -20,7 +19,8 @@ from app.bot.keyboards.builders import (
     after_save_keyboard,
     category_picker_keyboard,
     confirm_keyboard,
-    export_keyboard,
+    export_format_keyboard,
+    export_scope_keyboard,
     inline_search_keyboard,
     link_card_keyboard,
     link_edit_keyboard,
@@ -31,6 +31,7 @@ from app.bot.keyboards.callbacks import (
     ConfirmCallback,
     EditLinkCallback,
     ExportCallback,
+    ExportScopeCallback,
     LinkCallback,
     MenuCallback,
     PickCategoryCallback,
@@ -40,8 +41,7 @@ from app.config.settings import Settings
 from app.db.models import User
 from app.db.repositories.categories import CategoryRepository
 from app.db.repositories.links import LinkRepository
-from app.services.export_service import ExportService
-from app.services.import_service import ImportService
+from app.services.export_service import ExportScope, ExportService
 from app.services.link_service import LinkService, SaveLinksResult
 from app.services.metadata_fetcher import MetadataFetcher, MetadataFetchError
 from app.services.search_service import SearchService
@@ -73,7 +73,10 @@ async def add_urls_message(
     await collect_urls(message, state, session, db_user, data)
 
 
-@router.message(StateFilter(None), F.text | F.caption)
+@router.message(
+    StateFilter(None),
+    (F.text & ~F.text.startswith("/")) | (F.caption & ~F.caption.startswith("/")),
+)
 async def direct_url_message(
     message: Message,
     state: FSMContext,
@@ -509,19 +512,53 @@ async def link_refresh_callback(
 
 
 @router.message(Command("export"))
-async def export_command(message: Message, **data: Any) -> None:
+async def export_command(
+    message: Message,
+    session: AsyncSession,
+    db_user: User,
+    **data: Any,
+) -> None:
+    categories = await CategoryRepository(session).list_for_user(db_user.id)
     await message.answer(
-        text(data, "export.choose_format"),
-        reply_markup=export_keyboard(catalog_from_data(data), language_from_data(data)),
+        text(data, "export.choose_scope"),
+        reply_markup=export_scope_keyboard(
+            categories, catalog_from_data(data), language_from_data(data)
+        ),
     )
 
 
 @router.callback_query(MenuCallback.filter(F.action == "export"))
-async def export_menu_callback(callback: CallbackQuery, **data: Any) -> None:
+async def export_menu_callback(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    db_user: User,
+    **data: Any,
+) -> None:
+    categories = await CategoryRepository(session).list_for_user(db_user.id)
+    await edit_or_answer(
+        callback,
+        text(data, "export.choose_scope"),
+        reply_markup=export_scope_keyboard(
+            categories, catalog_from_data(data), language_from_data(data)
+        ),
+    )
+
+
+@router.callback_query(ExportScopeCallback.filter())
+async def export_scope_callback(
+    callback: CallbackQuery,
+    callback_data: ExportScopeCallback,
+    **data: Any,
+) -> None:
     await edit_or_answer(
         callback,
         text(data, "export.choose_format"),
-        reply_markup=export_keyboard(catalog_from_data(data), language_from_data(data)),
+        reply_markup=export_format_keyboard(
+            catalog_from_data(data),
+            language_from_data(data),
+            mode=callback_data.mode,
+            category_id=callback_data.category_id,
+        ),
     )
 
 
@@ -534,16 +571,21 @@ async def export_callback(
     **data: Any,
 ) -> None:
     features = data.get("features", {})
-    if isinstance(features, dict) and not features.get("enable_import_export", True):
+    if isinstance(features, dict) and not features.get("enable_export", True):
         await edit_or_answer(callback, text(data, "export.disabled"))
         return
+    scope = ExportScope(
+        mode=callback_data.mode,  # type: ignore[arg-type]
+        category_id=callback_data.category_id or None,
+    )
     service = ExportService(session)
+    suffix = _export_filename_suffix(scope)
     if callback_data.file_format == "csv":
-        payload = await service.export_csv(db_user.id)
-        filename = "linkdooni-export.csv"
+        payload = await service.export_csv(db_user.id, scope)
+        filename = f"linkdooni-export-{suffix}.csv"
     else:
-        payload = await service.export_json(db_user.id)
-        filename = "linkdooni-export.json"
+        payload = await service.export_json(db_user.id, scope)
+        filename = f"linkdooni-export-{suffix}.json"
     if callback.message is not None:
         await callback.message.answer_document(
             BufferedInputFile(payload, filename=filename),
@@ -552,37 +594,14 @@ async def export_callback(
     await callback.answer()
 
 
-@router.message(Command("import"))
-async def import_command(message: Message, state: FSMContext, **data: Any) -> None:
-    await state.set_state(LinkStates.waiting_import)
-    await message.answer(text(data, "import.prompt"))
-
-
-@router.message(LinkStates.waiting_import, F.document)
-async def import_document_message(
-    message: Message,
-    bot: Bot,
-    state: FSMContext,
-    session: AsyncSession,
-    db_user: User,
-    **data: Any,
-) -> None:
-    if message.document is None:
-        return
-    buffer = BytesIO()
-    await bot.download(message.document, destination=buffer)
-    await import_payload(message, state, session, db_user, data, buffer.getvalue())
-
-
-@router.message(LinkStates.waiting_import)
-async def import_text_message(
-    message: Message,
-    state: FSMContext,
-    session: AsyncSession,
-    db_user: User,
-    **data: Any,
-) -> None:
-    await import_payload(message, state, session, db_user, data, message.text or "")
+def _export_filename_suffix(scope: ExportScope) -> str:
+    if scope.mode == "favorites":
+        return "favorites"
+    if scope.mode == "uncategorized":
+        return "uncategorized"
+    if scope.mode == "category" and scope.category_id:
+        return f"category-{scope.category_id}"
+    return "all"
 
 
 async def collect_urls(
@@ -652,21 +671,6 @@ async def send_favorites(
     )
 
 
-async def import_payload(
-    message: Message,
-    state: FSMContext,
-    session: AsyncSession,
-    db_user: User,
-    data: dict[str, Any],
-    payload: str | bytes,
-) -> None:
-    features = data.get("features", {})
-    if isinstance(features, dict) and not features.get("enable_import_export", True):
-        await message.answer(text(data, "export.disabled"))
-        return
-    result = await ImportService(session).import_json(db_user.id, payload)
-    await state.clear()
-    await message.answer(text(data, "import.done", created=result.created, skipped=result.skipped))
 
 
 def _link_service(session: AsyncSession, data: dict[str, Any]) -> LinkService:
