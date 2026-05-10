@@ -3,7 +3,7 @@ from typing import Any
 from aiogram import F, Router
 from aiogram.filters import Command, CommandObject, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import BufferedInputFile, CallbackQuery, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, LinkPreviewOptions, Message
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -157,12 +157,14 @@ async def create_category_for_save_message(
         raw_urls=urls,
         category_id=category.id,
     )
+    saved_link = result.saved[0] if len(result.saved) == 1 else None
     await message.answer(
         _save_summary(result, data),
         reply_markup=after_save_keyboard(
             catalog_from_data(data),
             language_from_data(data),
             category_id=category.id,
+            saved_link=saved_link,
         ),
     )
 
@@ -182,6 +184,7 @@ async def save_pending_urls(
         raw_urls=urls,
         category_id=category_id,
     )
+    saved_link = result.saved[0] if len(result.saved) == 1 else None
     await edit_or_answer(
         callback,
         _save_summary(result, data),
@@ -189,6 +192,7 @@ async def save_pending_urls(
             catalog_from_data(data),
             language_from_data(data),
             category_id=category_id,
+            saved_link=saved_link,
         ),
     )
 
@@ -320,7 +324,7 @@ async def edit_field_callback(
     **data: Any,
 ) -> None:
     if callback_data.field == "category":
-        categories = await CategoryRepository(session).list_for_user(db_user.id)
+        categories = await CategoryRepository(session).list_by_recent_use(db_user.id)
         await edit_or_answer(
             callback,
             text(data, "links.choose_category", count=1),
@@ -414,7 +418,7 @@ async def link_move_callback(
     db_user: User,
     **data: Any,
 ) -> None:
-    categories = await CategoryRepository(session).list_for_user(db_user.id)
+    categories = await CategoryRepository(session).list_by_recent_use(db_user.id)
     await edit_or_answer(
         callback,
         text(data, "links.choose_category", count=1),
@@ -518,7 +522,7 @@ async def export_command(
     db_user: User,
     **data: Any,
 ) -> None:
-    categories = await CategoryRepository(session).list_for_user(db_user.id)
+    categories = await CategoryRepository(session).list_by_recent_use(db_user.id)
     await message.answer(
         text(data, "export.choose_scope"),
         reply_markup=export_scope_keyboard(
@@ -534,7 +538,7 @@ async def export_menu_callback(
     db_user: User,
     **data: Any,
 ) -> None:
-    categories = await CategoryRepository(session).list_for_user(db_user.id)
+    categories = await CategoryRepository(session).list_by_recent_use(db_user.id)
     await edit_or_answer(
         callback,
         text(data, "export.choose_scope"),
@@ -579,6 +583,26 @@ async def export_callback(
         category_id=callback_data.category_id or None,
     )
     service = ExportService(session)
+
+    chat_id = callback.from_user.id
+    if callback_data.file_format == "message":
+        title = await _scope_title(session, db_user.id, scope, data)
+        body = await service.export_message(
+            db_user.id,
+            scope,
+            title=title,
+            empty_text=text(data, "export.message_empty"),
+            truncated_template=text(data, "export.message_truncated", remaining="{remaining}"),
+        )
+        await callback.bot.send_message(
+            chat_id=chat_id,
+            text=body,
+            parse_mode="HTML",
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+        )
+        await callback.answer()
+        return
+
     suffix = _export_filename_suffix(scope)
     if callback_data.file_format == "csv":
         payload = await service.export_csv(db_user.id, scope)
@@ -586,12 +610,29 @@ async def export_callback(
     else:
         payload = await service.export_json(db_user.id, scope)
         filename = f"linkdooni-export-{suffix}.json"
-    if callback.message is not None:
-        await callback.message.answer_document(
-            BufferedInputFile(payload, filename=filename),
-            caption=text(data, "export.ready"),
-        )
+    await callback.bot.send_document(
+        chat_id=chat_id,
+        document=BufferedInputFile(payload, filename=filename),
+        caption=text(data, "export.ready"),
+    )
     await callback.answer()
+
+
+async def _scope_title(
+    session: AsyncSession,
+    user_id: int,
+    scope: ExportScope,
+    data: dict[str, Any],
+) -> str:
+    if scope.mode == "favorites":
+        return text(data, "export.title_favorites")
+    if scope.mode == "uncategorized":
+        return text(data, "export.title_uncategorized")
+    if scope.mode == "category" and scope.category_id:
+        category = await CategoryRepository(session).get(scope.category_id, user_id)
+        name = category.name if category else str(scope.category_id)
+        return text(data, "export.title_category", name=name)
+    return text(data, "export.title_all")
 
 
 def _export_filename_suffix(scope: ExportScope) -> str:
@@ -628,7 +669,7 @@ async def ask_for_category(
 ) -> None:
     await state.set_state(LinkStates.waiting_urls)
     await state.update_data(pending_urls=urls)
-    categories = await CategoryRepository(session).list_for_user(db_user.id)
+    categories = await CategoryRepository(session).list_by_recent_use(db_user.id)
     await message.answer(
         text(data, "links.choose_category", count=len(urls)),
         reply_markup=category_picker_keyboard(

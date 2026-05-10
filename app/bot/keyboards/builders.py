@@ -1,6 +1,10 @@
 from collections.abc import Iterable
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    SwitchInlineQueryChosenChat,
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards.callbacks import (
@@ -9,7 +13,6 @@ from app.bot.keyboards.callbacks import (
     EditLinkCallback,
     ExportCallback,
     ExportScopeCallback,
-    LanguageCallback,
     LinkCallback,
     MenuCallback,
     PickCategoryCallback,
@@ -18,31 +21,54 @@ from app.db.models import Category, Link
 from app.utils.i18n import MessageCatalog
 
 
-def category_inline_query(category_id: int | None, language: str) -> str:
-    prefix = "دسته" if language == "fa" else "category"
-    return f"{prefix}:{category_id or 0} "
+def category_inline_query(category_id: int | None) -> str:
+    return f"دسته:{category_id or 0} "
+
+
+def _share_to_any_chat(query: str = "") -> SwitchInlineQueryChosenChat:
+    return SwitchInlineQueryChosenChat(
+        query=query,
+        allow_user_chats=True,
+        allow_bot_chats=False,
+        allow_group_chats=True,
+        allow_channel_chats=True,
+    )
 
 
 def main_menu(catalog: MessageCatalog, language: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text=catalog.t(language, "menu.categories"),
-        callback_data=MenuCallback(action="categories"),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "inline_browse_label"),
+            switch_inline_query_current_chat="",
+        )
     )
-    builder.button(text=catalog.t(language, "menu.add"), callback_data=MenuCallback(action="add"))
-    builder.button(
-        text=catalog.t(language, "menu.search"), callback_data=MenuCallback(action="search")
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "inline_share_label"),
+            switch_inline_query_chosen_chat=_share_to_any_chat(),
+        )
     )
-    builder.button(
-        text=catalog.t(language, "menu.favorites"), callback_data=MenuCallback(action="favorites")
+    builder.row(
+        InlineKeyboardButton(
+            text=f"➕ {catalog.t(language, 'menu.add')}",
+            callback_data=MenuCallback(action="add").pack(),
+        ),
+        InlineKeyboardButton(
+            text=f"📁 {catalog.t(language, 'menu.categories')}",
+            callback_data=MenuCallback(action="categories").pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "menu.export"), callback_data=MenuCallback(action="export")
+    builder.row(
+        InlineKeyboardButton(
+            text=f"⭐ {catalog.t(language, 'menu.favorites')}",
+            callback_data=MenuCallback(action="favorites").pack(),
+        ),
+        InlineKeyboardButton(
+            text=f"📤 {catalog.t(language, 'menu.export')}",
+            callback_data=MenuCallback(action="export").pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "menu.settings"), callback_data=MenuCallback(action="settings")
-    )
-    builder.adjust(2, 2, 2)
     return builder.as_markup()
 
 
@@ -56,7 +82,7 @@ def categories_keyboard(
         builder.row(
             InlineKeyboardButton(
                 text=_category_label(category),
-                switch_inline_query_current_chat=category_inline_query(category.id, language),
+                switch_inline_query_current_chat=category_inline_query(category.id),
             ),
             InlineKeyboardButton(
                 text="⚙",
@@ -66,7 +92,7 @@ def categories_keyboard(
     builder.row(
         InlineKeyboardButton(
             text=catalog.t(language, "categories.uncategorized"),
-            switch_inline_query_current_chat=category_inline_query(None, language),
+            switch_inline_query_current_chat=category_inline_query(None),
         )
     )
     builder.row(
@@ -114,23 +140,34 @@ def after_save_keyboard(
     language: str,
     *,
     category_id: int | None,
+    saved_link: Link | None = None,
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    if saved_link is not None:
+        builder.row(
+            InlineKeyboardButton(
+                text=catalog.t(language, "links.share_now"),
+                switch_inline_query_chosen_chat=_share_to_any_chat(
+                    query=f"#{saved_link.id}"
+                ),
+            )
+        )
     builder.row(
         InlineKeyboardButton(
             text=catalog.t(language, "links.view_category"),
-            switch_inline_query_current_chat=category_inline_query(category_id, language),
+            switch_inline_query_current_chat=category_inline_query(category_id),
         )
     )
-    builder.button(
-        text=catalog.t(language, "links.add_another"),
-        callback_data=MenuCallback(action="add"),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.add_another"),
+            callback_data=MenuCallback(action="add").pack(),
+        ),
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.home"),
+            callback_data=MenuCallback(action="home").pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "menu.back"),
-        callback_data=MenuCallback(action="home"),
-    )
-    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -187,32 +224,43 @@ def category_picker_keyboard(
 def link_card_keyboard(link: Link, catalog: MessageCatalog, language: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text=catalog.t(language, "links.open"), url=link.url))
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.share"),
+            switch_inline_query_chosen_chat=_share_to_any_chat(query=f"#{link.id}"),
+        )
+    )
     favorite_label = "links.unfavorite" if link.is_favorite else "links.favorite"
-    builder.button(
-        text=catalog.t(language, "links.edit"),
-        callback_data=LinkCallback(action="edit", link_id=link.id),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, favorite_label),
+            callback_data=LinkCallback(action="favorite", link_id=link.id).pack(),
+        ),
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.refresh"),
+            callback_data=LinkCallback(action="refresh", link_id=link.id).pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "links.move"),
-        callback_data=LinkCallback(action="move", link_id=link.id),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.edit"),
+            callback_data=LinkCallback(action="edit", link_id=link.id).pack(),
+        ),
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.move"),
+            callback_data=LinkCallback(action="move", link_id=link.id).pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "links.delete"),
-        callback_data=LinkCallback(action="delete", link_id=link.id),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "links.delete"),
+            callback_data=LinkCallback(action="delete", link_id=link.id).pack(),
+        ),
+        InlineKeyboardButton(
+            text=catalog.t(language, "menu.back"),
+            callback_data=CategoryCallback(action="open", category_id=link.category_id or 0).pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "links.refresh"),
-        callback_data=LinkCallback(action="refresh", link_id=link.id),
-    )
-    builder.button(
-        text=catalog.t(language, favorite_label),
-        callback_data=LinkCallback(action="favorite", link_id=link.id),
-    )
-    builder.button(
-        text=catalog.t(language, "menu.back"),
-        callback_data=CategoryCallback(action="open", category_id=link.category_id or 0),
-    )
-    builder.adjust(1, 2, 2, 1, 1)
     return builder.as_markup()
 
 
@@ -321,29 +369,37 @@ def export_format_keyboard(
     category_id: int = 0,
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text=catalog.t(language, "export.json"),
-        callback_data=ExportCallback(file_format="json", mode=mode, category_id=category_id),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "export.format_message"),
+            callback_data=ExportCallback(
+                file_format="message", mode=mode, category_id=category_id
+            ).pack(),
+        )
     )
-    builder.button(
-        text=catalog.t(language, "export.csv"),
-        callback_data=ExportCallback(file_format="csv", mode=mode, category_id=category_id),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "export.format_json"),
+            callback_data=ExportCallback(
+                file_format="json", mode=mode, category_id=category_id
+            ).pack(),
+        ),
+        InlineKeyboardButton(
+            text=catalog.t(language, "export.format_csv"),
+            callback_data=ExportCallback(
+                file_format="csv", mode=mode, category_id=category_id
+            ).pack(),
+        ),
     )
-    builder.button(
-        text=catalog.t(language, "menu.back"),
-        callback_data=MenuCallback(action="export"),
+    builder.row(
+        InlineKeyboardButton(
+            text=catalog.t(language, "menu.back"),
+            callback_data=MenuCallback(action="export").pack(),
+        )
     )
-    builder.adjust(2, 1)
     return builder.as_markup()
 
 
-def settings_keyboard(catalog: MessageCatalog, language: str) -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.button(text="فارسی", callback_data=LanguageCallback(code="fa"))
-    builder.button(text="English", callback_data=LanguageCallback(code="en"))
-    builder.button(text=catalog.t(language, "menu.back"), callback_data=MenuCallback(action="home"))
-    builder.adjust(2, 1)
-    return builder.as_markup()
 
 
 def _category_label(category: Category) -> str:

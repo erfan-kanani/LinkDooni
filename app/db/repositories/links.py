@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models import Category, Link, Tag
 from app.db.repositories.tags import TagRepository
+from app.utils.persian import normalize_persian, normalize_persian_sql
 
 
 @dataclass(slots=True)
@@ -132,7 +133,10 @@ class LinkRepository:
     async def search(
         self, user_id: int, query: str, *, limit: int = 20, offset: int = 0
     ) -> list[Link]:
-        normalized = f"%{query.strip().lower()}%"
+        normalized = normalize_persian(query)
+        if not normalized:
+            return []
+        pattern = f"%{normalized}%"
         statement = (
             self._base_select()
             .outerjoin(Link.category)
@@ -140,13 +144,13 @@ class LinkRepository:
             .where(Link.user_id == user_id)
             .where(
                 or_(
-                    func.lower(Link.title).like(normalized),
-                    func.lower(Link.url).like(normalized),
-                    func.lower(Link.canonical_url).like(normalized),
-                    func.lower(func.coalesce(Link.description, "")).like(normalized),
-                    func.lower(func.coalesce(Link.note, "")).like(normalized),
-                    func.lower(func.coalesce(Category.name, "")).like(normalized),
-                    func.lower(func.coalesce(Tag.name, "")).like(normalized),
+                    normalize_persian_sql(Link.title).like(pattern),
+                    normalize_persian_sql(Link.url).like(pattern),
+                    normalize_persian_sql(Link.canonical_url).like(pattern),
+                    normalize_persian_sql(func.coalesce(Link.description, "")).like(pattern),
+                    normalize_persian_sql(func.coalesce(Link.note, "")).like(pattern),
+                    normalize_persian_sql(func.coalesce(Category.name, "")).like(pattern),
+                    normalize_persian_sql(func.coalesce(Tag.name, "")).like(pattern),
                 )
             )
             .distinct()

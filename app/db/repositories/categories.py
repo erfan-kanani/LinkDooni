@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Category, Link
@@ -23,6 +23,27 @@ class CategoryRepository:
             .order_by(Category.sort_order, Category.name)
         )
         return list(await self.session.scalars(statement))
+
+    async def list_by_recent_use(self, user_id: int) -> list[Category]:
+        """Order categories by most recent link activity, then by name.
+
+        Power users with many categories get the ones they use most at the
+        top of pickers; brand-new categories with no links sort by name.
+        """
+        last_used = func.max(Link.updated_at).label("last_used")
+        statement = (
+            select(Category, last_used)
+            .outerjoin(Link, (Link.category_id == Category.id) & (Link.user_id == user_id))
+            .where(Category.user_id == user_id)
+            .group_by(Category.id)
+            .order_by(
+                case((last_used.is_(None), 1), else_=0),
+                last_used.desc(),
+                Category.name,
+            )
+        )
+        rows = await self.session.execute(statement)
+        return [row[0] for row in rows]
 
     async def create(
         self,

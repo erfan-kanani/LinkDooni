@@ -18,11 +18,6 @@ class MessageCatalog:
         return sorted(self._messages.keys())
 
     def normalize_language(self, language_code: str | None) -> str:
-        if not language_code:
-            return self.default_language
-        normalized = language_code.split("-")[0].lower()
-        if normalized in self._messages:
-            return normalized
         return self.default_language
 
     def t(self, language: str | None, key: str, **kwargs: object) -> str:

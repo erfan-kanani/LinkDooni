@@ -17,6 +17,7 @@ from app.bot.handlers.helpers import catalog_from_data, format_link_card, langua
 from app.bot.keyboards.builders import link_card_keyboard
 from app.db.models import Link, User
 from app.db.repositories.links import LinkRepository
+from app.utils.persian import normalize_persian
 
 router = Router(name="inline")
 
@@ -26,10 +27,11 @@ PAGE_PATTERN = re.compile(r"(?:^|\s)p(?P<page>\d+)\s*$", re.IGNORECASE)
 
 @dataclass(frozen=True, slots=True)
 class InlineLinkQuery:
-    mode: Literal["all", "category", "favorites", "search"]
+    mode: Literal["all", "category", "favorites", "search", "by_id"]
     query: str
     category_id: int | None
     page: int
+    link_id: int | None = None
 
     @property
     def offset(self) -> int:
@@ -66,7 +68,10 @@ def parse_inline_query(raw_query: str, raw_offset: str | None = None) -> InlineL
         query = query[: page_match.start()].strip()
 
     lower_query = query.lower()
-    if lower_query in {"fav", "favorite", "favorites"}:
+    if lower_query.startswith("#") and lower_query[1:].isdigit():
+        return InlineLinkQuery("by_id", "", None, 1, link_id=int(lower_query[1:]))
+    folded = normalize_persian(query)
+    if folded in {"fav", "favorite", "favorites", "علاقه", "علاقه مندی", "علاقهمندی"}:
         return InlineLinkQuery("favorites", "", None, page)
     category_value = _category_value(lower_query)
     if category_value is not None:
@@ -94,6 +99,9 @@ async def _load_links(
 ) -> tuple[list[Link], bool]:
     repository = LinkRepository(session)
     limit = INLINE_PAGE_SIZE + 1
+    if parsed.mode == "by_id" and parsed.link_id is not None:
+        link = await repository.get(parsed.link_id, user_id)
+        return ([link] if link is not None else [], False)
     if parsed.mode == "category":
         links = await repository.list_by_category(
             user_id,
@@ -167,12 +175,16 @@ def _thumbnail_url(link: Link) -> str | None:
 
 
 def _empty_result(data: dict[str, Any]) -> InlineQueryResultArticle:
+    body = (
+        f"<b>{escape(text(data, 'inline.empty_title'))}</b>\n"
+        f"{escape(text(data, 'inline.empty_description'))}"
+    )
     return InlineQueryResultArticle(
         id="empty",
         title=text(data, "inline.empty_title"),
         description=text(data, "inline.empty_description"),
         input_message_content=InputTextMessageContent(
-            message_text=escape(text(data, "inline.empty_description")),
+            message_text=body,
             parse_mode="HTML",
         ),
     )

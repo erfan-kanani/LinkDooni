@@ -68,19 +68,19 @@ async def edit_or_answer(
 
 
 def format_link_card(link: Link, catalog: MessageCatalog, language: str) -> str:
-    description = link.description or link.note or ""
-    tags = " ".join(f"#{escape(tag.name)}" for tag in link.tags)
-    suffix = f"\n\n{tags}" if tags else ""
-    return (
-        catalog.t(
-            language,
-            "links.card",
-            title=escape(link.title),
-            url=escape(link.url),
-            description=escape(description),
-        ).strip()
-        + suffix
-    )
+    parts: list[str] = [
+        catalog.t(language, "links.card_title", title=escape(link.title)),
+        catalog.t(language, "links.card_url", url=escape(link.url)),
+    ]
+    description = link.description or link.note
+    if description:
+        parts.append(
+            catalog.t(language, "links.card_description", description=escape(description.strip()))
+        )
+    if link.tags:
+        tags = " ".join(f"#{escape(tag.name)}" for tag in link.tags)
+        parts.append(tags)
+    return "\n".join(parts)
 
 
 def link_preview_options(link: Link) -> LinkPreviewOptions:
