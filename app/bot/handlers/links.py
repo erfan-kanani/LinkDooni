@@ -83,6 +83,8 @@ async def direct_url_message(
 ) -> None:
     if not _message_text(message):
         return
+    if message.via_bot is not None and message.via_bot.id == message.bot.id:
+        return
     urls = URLValidator().extract_urls(_message_text(message))
     if not urls:
         return

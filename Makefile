@@ -1,7 +1,7 @@
 DOCKER ?= docker
 COMPOSE_FILE ?= docker-compose.yml
 
-.PHONY: install run lint format test migrate revision db-up db-down db-logs
+.PHONY: install run lint format test migrate revision db-up db-down db-logs db-test-create
 
 install:
 	uv sync --dev
@@ -32,3 +32,6 @@ db-down:
 
 db-logs:
 	$(DOCKER) compose -f $(COMPOSE_FILE) logs -f db
+
+db-test-create:
+	$(DOCKER) exec linkdooni-postgres psql -U linkdooni -d linkdooni -c "CREATE DATABASE linkdooni_test;" || true

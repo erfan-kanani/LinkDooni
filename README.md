@@ -2,7 +2,7 @@
 
 LinkDooni is an async Python Telegram bot for Iranian users and small work teams who organize business links inside Telegram. Users can save links, categorize them, fetch previews, search, edit, delete, favorite, import, and export their data without leaving a chat.
 
-The MVP uses SQLite by default and keeps the repository layer SQLAlchemy-based so PostgreSQL can be enabled later with a `DATABASE_URL` change.
+Storage is PostgreSQL, run locally via Docker. The repository layer is async SQLAlchemy.
 
 ## Features
 
@@ -40,56 +40,34 @@ Create your environment file:
 cp .env.example .env
 ```
 
-Set the token:
+Set the token in `.env`:
 
 ```bash
 TELEGRAM_BOT_TOKEN=123456789:your-real-token
 ```
 
-SQLite is the default:
-
-```bash
-DATABASE_URL=sqlite+aiosqlite:///./linkdooni.db
-```
-
-Run migrations:
-
-```bash
-uv run alembic upgrade head
-```
-
-Run locally with long polling:
-
-```bash
-uv run linkdooni
-```
-
-or:
-
-```bash
-make run
-```
-
-## Docker PostgreSQL Development Database
-
-SQLite is enough for the MVP, but this project is ready for PostgreSQL development through Docker Desktop.
-
-Start PostgreSQL:
-
-```bash
-make db-up
-```
-
-Use this database URL in `.env`:
+The default `DATABASE_URL` in `.env.example` points at the local Docker Postgres:
 
 ```bash
 DATABASE_URL=postgresql+asyncpg://linkdooni:linkdooni@localhost:5432/linkdooni
 ```
 
-Run migrations against PostgreSQL:
+Start PostgreSQL via Docker Desktop:
+
+```bash
+make db-up
+```
+
+Run migrations:
 
 ```bash
 make migrate
+```
+
+Run the bot:
+
+```bash
+make run
 ```
 
 Stop the database:
@@ -120,9 +98,10 @@ Format code:
 make format
 ```
 
-Run tests:
+Run tests (requires `make db-up` first; one-time `make db-test-create` to create the `linkdooni_test` database):
 
 ```bash
+make db-test-create
 make test
 ```
 

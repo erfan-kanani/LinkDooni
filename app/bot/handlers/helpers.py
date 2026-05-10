@@ -34,6 +34,19 @@ async def edit_or_answer(
     parse_mode: str | None = None,
     link_preview_options: LinkPreviewOptions | None = None,
 ) -> None:
+    if callback.inline_message_id is not None:
+        try:
+            await callback.bot.edit_message_text(
+                text=body,
+                inline_message_id=callback.inline_message_id,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode,
+                link_preview_options=link_preview_options,
+            )
+        except TelegramBadRequest:
+            pass
+        await callback.answer()
+        return
     if callback.message is None:
         await callback.answer()
         return

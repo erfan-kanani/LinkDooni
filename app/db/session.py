@@ -12,10 +12,7 @@ from app.db.models import Base
 
 
 def create_engine(database_url: str, *, echo: bool = False) -> AsyncEngine:
-    connect_args: dict[str, object] = {}
-    if database_url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
-    return create_async_engine(database_url, echo=echo, connect_args=connect_args)
+    return create_async_engine(database_url, echo=echo)
 
 
 def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:

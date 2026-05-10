@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     telegram_bot_token: SecretStr | None = Field(None, alias="TELEGRAM_BOT_TOKEN")
-    database_url: str = Field("sqlite+aiosqlite:///./linkdooni.db", alias="DATABASE_URL")
+    database_url: str = Field(
+        "postgresql+asyncpg://linkdooni:linkdooni@localhost:5432/linkdooni",
+        alias="DATABASE_URL",
+    )
     log_level: str = Field("INFO", alias="LOG_LEVEL")
     config_dir: Path = Field(Path("app/config"), alias="CONFIG_DIR")
     auto_create_db: bool = Field(True, alias="LINKDOONI_AUTO_CREATE_DB")

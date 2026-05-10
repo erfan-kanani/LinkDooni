@@ -148,8 +148,6 @@ def _link_result(
             ),
         ),
         reply_markup=link_card_keyboard(link, catalog, language),
-        url=link.url,
-        hide_url=False,
     )
 
 
