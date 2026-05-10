@@ -111,10 +111,10 @@ class MetadataFetcher:
             chunks: list[bytes] = []
             total = 0
             async for chunk in response.aiter_bytes():
-                total += len(chunk)
-                if total > self.max_response_bytes:
-                    raise MetadataFetchError("too_large", "Response is too large.")
                 chunks.append(chunk)
+                total += len(chunk)
+                if total >= self.max_response_bytes:
+                    break
             return httpx.Response(
                 status_code=response.status_code,
                 headers=response.headers,

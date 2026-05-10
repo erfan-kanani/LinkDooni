@@ -57,10 +57,7 @@ class LinkService:
 
             try:
                 metadata = await self.metadata_fetcher.fetch(validated.normalized_url)
-            except UrlValidationError:
-                result.invalid.append(validated.normalized_url)
-                continue
-            except MetadataFetchError:
+            except (UrlValidationError, MetadataFetchError):
                 metadata = None
                 result.metadata_failed.append(validated.normalized_url)
 

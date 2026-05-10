@@ -68,21 +68,27 @@ async def test_treats_captcha_redirect_as_metadata_failure() -> None:
     assert exc_info.value.code == "blocked_by_site"
 
 
-async def test_enforces_max_response_size() -> None:
+async def test_truncates_oversized_response_and_parses_head() -> None:
+    head = (
+        b"<html><head>"
+        b"<meta property=\"og:title\" content=\"Hello\"/>"
+        b"</head><body>"
+    )
+    body = b"x" * 5_000
+
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
             headers={"content-type": "text/html"},
-            content=b"x" * 20,
+            content=head + body,
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         fetcher = MetadataFetcher(
             client=client,
             validator=URLValidator(resolver=public_resolver),
-            max_response_bytes=5,
+            max_response_bytes=len(head) + 100,
         )
-        with pytest.raises(MetadataFetchError) as exc_info:
-            await fetcher.fetch("https://example.com")
+        metadata = await fetcher.fetch("https://example.com")
 
-    assert exc_info.value.code == "too_large"
+    assert metadata.title == "Hello"
